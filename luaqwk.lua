@@ -65,7 +65,11 @@ end
 
 local function merge(keep, overwrite)
 	for key, val in pairs(keep) do
-		overwrite[key] = val
+		if type(key) == "string" then
+			overwrite[key] = val
+		else
+			overwrite[#overwrite + 1] = val
+		end
 	end
 	return overwrite
 end
