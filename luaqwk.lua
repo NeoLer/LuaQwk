@@ -98,35 +98,20 @@ print(
 
 ]]
 
-
 -- compose(a, b, c) = function(...) return c(b(a(...))) end
--- warning: VERY slow! the functions themselves are not slow, but packing/unpacking is.
--- good use case: something like compose(expensive, expensive, expensive) used a few times (totally fine)
--- bad use case: something like compose(cheap, cheap, cheap) 1000s of times (DON'T!)
 function LuaQwk.compose(...)
-	local function pack(...) return {...} end
-	local unpack = unpack
-	local unpacker = function(t)     -- really ugly, but faster than unpack assuming
-		if #t == 1 then return t[1]   -- you probably aren't going to be using more than 5
-		elseif #t == 2 then return t[2] -- return values
-		elseif #t == 3 then return t[3]
-		elseif #t == 4 then return t[4]
-		elseif #t == 5 then return t[5]
-		end
-		return unpack(t)
-	end
 	local fns = {...}
 	return function(...)
 		local result = {...}
 		for i = 1, #fns do
-			result = pack(fns[i](unpacker(result)))
+			result = {fns[i](unpack(result))}
 		end
-		return result
+		return unpack(result)
 	end
 end
 
 -- composeSingle: like compose, but no variable arguments on the composed function
--- still slow, but far faster than compose because packing/unpacking is not needed
+-- still slow, but faster than compose because packing/unpacking is not needed
 function LuaQwk.composeSingle(...)
 	local fns = {...}
 	return function(x)
