@@ -1,10 +1,8 @@
 --[[
-
 	LuaQwk is a small collection of tools to speed up general coding in Lua
 	 See github.com/Snoxicle/LuaQwk for latest release
 	  Using LuaQwk:
 	 	local LuaQwk = require("luaqwk") -- all of LuaQwk is returned in a table
-
 ]]
 
 LuaQwk = {}
@@ -71,12 +69,9 @@ end
 
 
 --[[
-
 local LuaQwk = require("luaqwk")
-
 local speedtestN = function(n) return math.floor(math.sqrt(n)) end 
 local speedtestC = LuaQwk.compose(math.sqrt, math.floor)
-
 print(
 	"Manual implementation: " .. LuaQwk.timeF(function()
 		for i = 1, 1000000000 do
@@ -89,29 +84,39 @@ print(
 		end
 	end)
 )
-
 (Manual does it 1000 more times)
-
 >>Manual implementation: 1.884	
 >>LuaQwk.compose: 2.028
-
-
 ]]
 
+
 -- compose(a, b, c) = function(...) return c(b(a(...))) end
+-- warning: VERY slow! the functions themselves are not slow, but packing/unpacking is.
+-- good use case: something like compose(expensive, expensive, expensive) used a few times (totally fine)
+-- bad use case: something like compose(cheap, cheap, cheap) 1000s of times (DON'T!)
 function LuaQwk.compose(...)
+	local unpack = unpack
+	local unpacker = function(t)     -- really ugly, but faster than unpack assuming
+		if #t == 1 then return t[1]   -- you probably aren't going to be using more than 5
+		elseif #t == 2 then return t[1], t[2] -- return values
+		elseif #t == 3 then return t[1], t[2], t[3]
+		elseif #t == 4 then return t[1], t[2], t[3], t[4]
+		elseif #t == 5 then return t[1], t[2], t[3], t[4], t[5]
+		end
+		return unpack(t)
+	end
 	local fns = {...}
 	return function(...)
 		local result = {...}
 		for i = 1, #fns do
-			result = {fns[i](unpack(result))}
+			result = {fns[i](unpacker(result))}
 		end
 		return unpack(result)
 	end
 end
 
 -- composeSingle: like compose, but no variable arguments on the composed function
--- still slow, but faster than compose because packing/unpacking is not needed
+-- still slow, but far faster than compose because packing/unpacking is not needed
 function LuaQwk.composeSingle(...)
 	local fns = {...}
 	return function(x)
