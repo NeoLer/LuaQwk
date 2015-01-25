@@ -70,15 +70,83 @@ function LuaQwk.pack(...)
 end
 
 
--- compose(a, b, c) = function(x) return c(b(a(x))) end
+--[[
+
+local LuaQwk = require("luaqwk")
+
+local speedtestN = function(n) return math.floor(math.sqrt(n)) end 
+local speedtestC = LuaQwk.compose(math.sqrt, math.floor)
+
+print(
+	"Manual implementation: " .. LuaQwk.timeF(function()
+		for i = 1, 1000000000 do
+			speedtestN(i)
+		end
+	end),
+	"\nLuaQwk.compose: " .. LuaQwk.timeF(function()
+		for i = 1, 1000000 do
+			speedtestC(i)
+		end
+	end)
+)
+
+(Manual does it 1000 more times)
+
+>>Manual implementation: 1.884	
+>>LuaQwk.compose: 2.028
+
+
+]]
+
+
+-- compose(a, b, c) = function(...) return c(b(a(...))) end
+-- warning: VERY slow! the functions themselves are not slow, but packing/unpacking is.
+-- good use case: something like compose(expensive, expensive, expensive) used a few times (totally fine)
+-- bad use case: something like compose(cheap, cheap, cheap) 1000s of times (DON'T!)
 function LuaQwk.compose(...)
+	local function pack(...) return {...} end
+	local unpack = unpack
+	local unpacker = function(t)     -- really ugly, but faster than unpack assuming
+		if #t == 1 then return t[1]   -- you probably aren't going to be using more than 5
+		elseif #t == 2 then return t[2] -- return values
+		elseif #t == 3 then return t[3]
+		elseif #t == 4 then return t[4]
+		elseif #t == 5 then return t[5]
+		end
+		return unpack(t)
+	end
 	local fns = {...}
 	return function(...)
 		local result = {...}
-		for _, f in pairs(fns) do
-			result = LuaQwk.pack(f(unpack(result)))
+		for i = 1, #fns do
+			result = pack(fns[i](unpacker(result)))
 		end
 		return result
+	end
+end
+
+-- composeSingle: like compose, but no variable arguments on the composed function
+-- still slow, but far faster than compose because packing/unpacking is not needed
+function LuaQwk.composeSingle(...)
+	local fns = {...}
+	return function(x)
+		local result = x
+		for i = 1, #fns do
+			result = fns[i](result)
+		end
+		return result
+	end
+end
+
+-- 2-argument version of composeSingle
+function LuaQwk.composeDouble(...)
+	local fns = {...}
+	return function(x, y)
+		local result1, result2 = x, y
+		for i = 1, #fns do
+			result1, result2 = fns[i](result1, result2)
+		end
+		return result1, result2
 	end
 end
 
@@ -100,6 +168,14 @@ function LuaQwk.callUnlessNil(maybeNil, f)
 	else
 		return nil
 	end
+end
+
+
+-- Time func and return time as number
+function LuaQwk.timeF(f, ...)
+	local start = os.clock()
+	f(...)
+	return os.clock() - start
 end
 
 
