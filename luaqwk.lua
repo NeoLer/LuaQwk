@@ -1,3 +1,4 @@
+
 --[[
 	LuaQwk is a small collection of tools to speed up general coding in Lua
 	 See github.com/Snoxicle/LuaQwk for latest release
@@ -21,7 +22,8 @@ function LuaQwk.enableArrayStyleStringIndexes()
 end
 
 
--- Overwrite/merge keep with overwrite
+-- Merge table keep with overwrite.
+-- Keep overwrites overwrite on name collisions.
 function LuaQwk.merge(keep, overwrite)
 	for key, val in pairs(keep) do
 		if type(key) == "string" then
@@ -33,6 +35,11 @@ function LuaQwk.merge(keep, overwrite)
 	return overwrite
 end
 
+
+-- Set each element of t to v
+function LuaQwk.setT(t, v)
+	for i = 1, #t do t[i] = v end
+end
 
 -- Traverse over t, call each function with (value, key)
 function LuaQwk.process(t, ...)
@@ -168,6 +175,11 @@ function LuaQwk.timeF(f, ...)
 	return os.clock() - start
 end
 
+-- Example: test(function(x) return x[1] < x[2] end, table.sort, {1, 2, 3})
+-- >> true
+function LuaQwk.test(check, f, ...)
+	return check(f(...))
+end
 
 
 return LuaQwk
