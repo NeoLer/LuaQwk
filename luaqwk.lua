@@ -9,7 +9,6 @@
 LuaQwk = {}
 
 
-
 -- Lets you index strings like you would tables if called
 function LuaQwk.enableArrayStyleStringIndexes()
 	getmetatable('').__index = function(self, i)
@@ -68,6 +67,23 @@ function LuaQwk.mapCpy(t, f)
 	return u
 end
 
+-- Append b to a (no copy, and only numeric indexes)
+function utils.appendTi(a, b)
+   local sz = #a
+   for _, v in ipairs(b) do
+      sz = sz + 1
+      a[sz] = v
+   end
+   return a
+end
+
+-- varargs of appendTi
+function utils.appendAll(a, ...)
+   for _, t in ipairs({...}) do
+      utils.appendTi(a, t)
+   end
+   return a
+end
 
 -- The opposite of unpack()
 function LuaQwk.pack(...)
@@ -75,7 +91,8 @@ function LuaQwk.pack(...)
 end
 
 
---[[
+--[[ (function compose benchmark/example)
+
 local LuaQwk = require("luaqwk")
 local speedtestN = function(n) return math.floor(math.sqrt(n)) end 
 local speedtestC = LuaQwk.compose(math.sqrt, math.floor)
@@ -91,7 +108,7 @@ print(
 		end
 	end)
 )
-(Manual does it 1000 more times)
+(Manual does 1000 more iterations; ~1000x faster! :c)
 >>Manual implementation: 1.884	
 >>LuaQwk.compose: 2.028
 ]]
