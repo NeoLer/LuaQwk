@@ -68,7 +68,7 @@ function LuaQwk.mapCpy(t, f)
 end
 
 -- Append b to a (no copy, and only numeric indexes)
-function LuaQwk.ppendTi(a, b)
+function LuaQwk.appendTi(a, b)
    local sz = #a
    for _, v in ipairs(b) do
       sz = sz + 1
